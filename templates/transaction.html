@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="transaction-page">
+    <div class="page-header">
+        <h2><i class="fas fa-exchange-alt"></i> Transaction de Stock</h2>
+        <a href="{{ url_for('materials') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div class="transaction-container">
+        <!-- Material Info -->
+        <div class="material-info">
+            <h3><i class="fas fa-box"></i> Informations du Matériel</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Nom:</label>
+                    <span>{{ material.name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Catégorie:</label>
+                    <span>{{ material.category }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Marque:</label>
+                    <span>{{ material.brand or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Modèle:</label>
+                    <span>{{ material.model or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Stock Actuel:</label>
+                    <span class="stock-current">{{ material.quantity }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Stock Minimum:</label>
+                    <span>{{ material.min_stock }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Form -->
+        <div class="transaction-form">
+            <h3><i class="fas fa-exchange-alt"></i> Nouvelle Transaction</h3>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="type">Type de Transaction *</label>
+                    <select id="type" name="type" required onchange="updateTransactionType()">
+                        <option value="">Sélectionner le type</option>
+                        <option value="in">Entrée de Stock</option>
+                        <option value="out">Sortie de Stock</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantity">Quantité *</label>
+                    <input type="number" id="quantity" name="quantity" min="1" required>
+                    <small id="quantityHelp" class="help-text"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reason">Raison</label>
+                    <select id="reason" name="reason">
+                        <option value="">Sélectionner une raison</option>
+                        <option value="Réapprovisionnement">Réapprovisionnement</option>
+                        <option value="Commande client">Commande client</option>
+                        <option value="Retour client">Retour client</option>
+                        <option value="Inventaire">Inventaire</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Défaut">Défaut</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="user">Utilisateur</label>
+                    <input type="text" id="user" name="user" placeholder="Nom de l'utilisateur">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer Transaction
+                    </button>
+                    <a href="{{ url_for('materials') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Stock Preview -->
+        <div class="stock-preview" id="stockPreview" style="display: none;">
+            <h3><i class="fas fa-eye"></i> Aperçu du Stock</h3>
+            <div class="preview-info">
+                <div class="preview-item">
+                    <label>Stock Actuel:</label>
+                    <span id="currentStock">{{ material.quantity }}</span>
+                </div>
+                <div class="preview-item">
+                    <label>Quantité:</label>
+                    <span id="transactionQuantity">0</span>
+                </div>
+                <div class="preview-item">
+                    <label>Nouveau Stock:</label>
+                    <span id="newStock" class="new-stock">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateTransactionType() {
+    const type = document.getElementById('type').value;
+    const quantityHelp = document.getElementById('quantityHelp');
+    const stockPreview = document.getElementById('stockPreview');
+    
+    if (type === 'in') {
+        quantityHelp.textContent = 'Quantité à ajouter au stock';
+        quantityHelp.className = 'help-text success';
+    } else if (type === 'out') {
+        quantityHelp.textContent = 'Quantité à retirer du stock (maximum: {{ material.quantity }})';
+        quantityHelp.className = 'help-text warning';
+        document.getElementById('quantity').max = '{{ material.quantity }}';
+    } else {
+        quantityHelp.textContent = '';
+        quantityHelp.className = 'help-text';
+        stockPreview.style.display = 'none';
+    }
+}
+
+// Update stock preview
+document.getElementById('quantity').addEventListener('input', function() {
+    const type = document.getElementById('type').value;
+    const quantity = parseInt(this.value) || 0;
+    const currentStock = '{{ material.quantity }}';
+    
+    if (type && quantity > 0) {
+        const newStock = type === 'in' ? currentStock + quantity : currentStock - quantity;
+        
+        document.getElementById('transactionQuantity').textContent = quantity;
+        document.getElementById('newStock').textContent = newStock;
+        
+        // Color coding for new stock
+        const newStockElement = document.getElementById('newStock');
+        if (newStock < '{{ material.min_stock }}') {
+            newStockElement.className = 'new-stock low';
+        } else {
+            newStockElement.className = 'new-stock normal';
+        }
+        
+        document.getElementById('stockPreview').style.display = 'block';
+    } else {
+        document.getElementById('stockPreview').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

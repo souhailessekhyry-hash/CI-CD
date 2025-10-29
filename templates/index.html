@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h2><i class="fas fa-tachometer-alt"></i> Tableau de Bord</h2>
+        <p>Vue d'ensemble de votre inventaire</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_materials }}</h3>
+                <p>Matériels en Stock</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-euro-sign"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ "%.2f"|format(total_value) }}€</h3>
+                <p>Valeur Totale</p>
+            </div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ low_stock|length }}</h3>
+                <p>Stock Faible</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="stat-content">
+                <a href="{{ url_for('add_material') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Ajouter Matériel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    {% if low_stock %}
+    <div class="alert-section">
+        <h3><i class="fas fa-exclamation-triangle"></i> Alertes de Stock Faible</h3>
+        <div class="alert-grid">
+            {% for material in low_stock %}
+            <div class="alert-card">
+                <div class="alert-content">
+                    <h4>{{ material.name }}</h4>
+                    <p><strong>Stock actuel:</strong> {{ material.quantity }}</p>
+                    <p><strong>Stock minimum:</strong> {{ material.min_stock }}</p>
+                    <p><strong>Catégorie:</strong> {{ material.category }}</p>
+                </div>
+                <div class="alert-actions">
+                    <a href="{{ url_for('transaction', id=material.id) }}" class="btn btn-small">
+                        <i class="fas fa-plus"></i> Réapprovisionner
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Transactions -->
+    <div class="recent-section">
+        <h3><i class="fas fa-history"></i> Transactions Récentes</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Matériel</th>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Raison</th>
+                        <th>Utilisateur</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in recent_transactions %}
+                    <tr>
+                        <td>{{ transaction.material_name }}</td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if transaction.transaction_type == 'in' else 'danger' }}">
+                                {{ 'Entrée' if transaction.transaction_type == 'in' else 'Sortie' }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.quantity }}</td>
+                        <td>{{ transaction.reason or '-' }}</td>
+                        <td>{{ transaction.user or '-' }}</td>
+                        <td>{{ transaction.created_at[:16] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3><i class="fas fa-bolt"></i> Actions Rapides</h3>
+        <div class="action-grid">
+            <a href="{{ url_for('add_material') }}" class="action-card">
+                <i class="fas fa-plus"></i>
+                <h4>Ajouter Matériel</h4>
+                <p>Enregistrer un nouveau matériel</p>
+            </a>
+            
+            <a href="{{ url_for('materials') }}" class="action-card">
+                <i class="fas fa-list"></i>
+                <h4>Voir Inventaire</h4>
+                <p>Consulter tous les matériels</p>
+            </a>
+            
+            <a href="{{ url_for('reports') }}" class="action-card">
+                <i class="fas fa-chart-bar"></i>
+                <h4>Rapports</h4>
+                <p>Analyser les données</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

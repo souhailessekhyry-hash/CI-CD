@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="materials-page">
+    <div class="page-header">
+        <h2><i class="fas fa-boxes"></i> Gestion des Matériels</h2>
+        <div class="page-actions">
+            <a href="{{ url_for('add_material') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Ajouter Matériel
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="search-section">
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Rechercher un matériel...">
+        </div>
+        <div class="filter-bar">
+            <select id="categoryFilter">
+                <option value="">Toutes les catégories</option>
+                <option value="Ordinateurs">Ordinateurs</option>
+                <option value="Périphériques">Périphériques</option>
+                <option value="Réseau">Réseau</option>
+                <option value="Stockage">Stockage</option>
+                <option value="Logiciels">Logiciels</option>
+                <option value="Accessoires">Accessoires</option>
+                <option value="Composants">Composants</option>
+                <option value="Sécurité">Sécurité</option>
+            </select>
+            <select id="stockFilter">
+                <option value="">Tous les stocks</option>
+                <option value="low">Stock faible</option>
+                <option value="normal">Stock normal</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Materials Table -->
+    <div class="table-container">
+        <table class="data-table" id="materialsTable">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Marque</th>
+                    <th>Modèle</th>
+                    <th>Prix</th>
+                    <th>Stock</th>
+                    <th>Stock Min.</th>
+                    <th>Fournisseur</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                <tr data-category="{{ material.category }}" data-stock="{{ 'low' if material.quantity <= material.min_stock else 'normal' }}">
+                    <td>
+                        <div class="material-name">
+                            <strong>{{ material.name }}</strong>
+                            {% if material.description %}
+                            <small>{{ material.description[:50] }}{% if material.description|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="category-badge">{{ material.category }}</span>
+                    </td>
+                    <td>{{ material.brand or '-' }}</td>
+                    <td>{{ material.model or '-' }}</td>
+                    <td class="price">{{ "%.2f"|format(material.price) }}€</td>
+                    <td>
+                        <span class="stock-badge {{ 'low' if material.quantity <= material.min_stock else 'normal' }}">
+                            {{ material.quantity }}
+                        </span>
+                    </td>
+                    <td>{{ material.min_stock }}</td>
+                    <td>{{ material.supplier or '-' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('edit_material', id=material.id) }}" class="btn btn-small btn-secondary" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('transaction', id=material.id) }}" class="btn btn-small btn-info" title="Transaction">
+                                <i class="fas fa-exchange-alt"></i>
+                            </a>
+                            <button onclick="deleteMaterial('{{ material.id }}')" class="btn btn-small btn-danger" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not materials %}
+    <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <h3>Aucun matériel trouvé</h3>
+        <p>Commencez par ajouter votre premier matériel à l'inventaire.</p>
+        <a href="{{ url_for('add_material') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter un Matériel
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteMaterial(id) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce matériel ?')) {
+        window.location.href = '/delete_material/' + id;
+    }
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#materialsTable tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Filter functionality
+document.getElementById('categoryFilter').addEventListener('change', filterTable);
+document.getElementById('stockFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    const rows = document.querySelectorAll('#materialsTable tbody tr');
+    
+    rows.forEach(row => {
+        const category = row.dataset.category;
+        const stock = row.dataset.stock;
+        
+        let showRow = true;
+        
+        if (categoryFilter && category !== categoryFilter) {
+            showRow = false;
+        }
+        
+        if (stockFilter && stock !== stockFilter) {
+            showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reports-page">
+    <div class="page-header">
+        <h2><i class="fas fa-chart-bar"></i> Rapports et Analyses</h2>
+        <div class="page-actions">
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+        </div>
+    </div>
+
+    <!-- Stock Report by Category -->
+    <div class="report-section">
+        <h3><i class="fas fa-chart-pie"></i> Rapport par Catégorie</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Catégorie</th>
+                        <th>Nombre de Matériels</th>
+                        <th>Quantité Totale</th>
+                        <th>Valeur Totale</th>
+                        <th>Prix Moyen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in stock_report %}
+                    <tr>
+                        <td>
+                            <span class="category-badge">{{ report.category }}</span>
+                        </td>
+                        <td>{{ report.count }}</td>
+                        <td>{{ report.total_quantity }}</td>
+                        <td class="price">{{ "%.2f"|format(report.total_value) }}€</td>
+                        <td class="price">{{ "%.2f"|format(report.total_value / report.total_quantity) }}€</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td><strong>Total</strong></td>
+                        <td><strong>{{ stock_report|sum(attribute='count') }}</strong></td>
+                        <td><strong>{{ stock_report|sum(attribute='total_quantity') }}</strong></td>
+                        <td class="price"><strong>{{ "%.2f"|format(stock_report|sum(attribute='total_value')) }}€</strong></td>
+                        <td>-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Low Stock Report -->
+    <div class="report-section">
+        <h3><i class="fas fa-exclamation-triangle"></i> Matériels en Stock Faible</h3>
+        {% if low_stock_report %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Catégorie</th>
+                        <th>Stock Actuel</th>
+                        <th>Stock Minimum</th>
+                        <th>Déficit</th>
+                        <th>Prix Unitaire</th>
+                        <th>Valeur Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material in low_stock_report %}
+                    <tr>
+                        <td>
+                            <div class="material-name">
+                                <strong>{{ material.name }}</strong>
+                                {% if material.brand %}
+                                <small>{{ material.brand }} {{ material.model or '' }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="category-badge">{{ material.category }}</span>
+                        </td>
+                        <td>
+                            <span class="stock-badge low">{{ material.quantity }}</span>
+                        </td>
+                        <td>{{ material.min_stock }}</td>
+                        <td>
+                            <span class="deficit-badge">
+                                {{ material.min_stock - material.quantity }}
+                            </span>
+                        </td>
+                        <td class="price">{{ "%.2f"|format(material.price) }}€</td>
+                        <td class="price">{{ "%.2f"|format(material.price * material.quantity) }}€</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h3>Aucun matériel en stock faible</h3>
+            <p>Tous vos matériels ont un stock suffisant.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="summary-content">
+                <h3>{{ stock_report|sum(attribute='count') }}</h3>
+                <p>Total Matériels</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon">
+                <i class="fas fa-euro-sign"></i>
+            </div>
+            <div class="summary-content">
+                <h3>{{ "%.0f"|format(stock_report|sum(attribute='total_value')) }}€</h3>
+                <p>Valeur Totale</p>
+            </div>
+        </div>
+        
+        <div class="summary-card warning">
+            <div class="summary-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="summary-content">
+                <h3>{{ low_stock_report|length }}</h3>
+                <p>Stock Faible</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="summary-content">
+                <h3>{{ "%.0f"|format(stock_report|sum(attribute='total_value') / stock_report|sum(attribute='count')) }}€</h3>
+                <p>Prix Moyen</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    {% if low_stock_report %}
+    <div class="recommendations">
+        <h3><i class="fas fa-lightbulb"></i> Recommandations</h3>
+        <div class="recommendation-list">
+            {% for material in low_stock_report %}
+            <div class="recommendation-item">
+                <i class="fas fa-arrow-up"></i>
+                <div class="recommendation-content">
+                    <h4>{{ material.name }}</h4>
+                    <p>Réapprovisionner {{ material.min_stock - material.quantity }} unités pour atteindre le stock minimum.</p>
+                    <span class="recommendation-cost">Coût estimé: {{ "%.2f"|format(material.price * (material.min_stock - material.quantity)) }}€</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@media print {
+    .page-header .page-actions,
+    .nav,
+    .footer {
+        display: none !important;
+    }
+    
+    .reports-page {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .report-section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+}
+</style>
+{% endblock %}
