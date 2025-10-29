@@ -1,23 +1,11 @@
+# Virtual environment
+.venv/
+venv/
+
 # Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-env/
-venv/
-.venv/
 
-# Packages
-*.dist-info/
-bin/
-build/
-
-# Database
-*.db
-
-# IDEs
-.vscode/
-.idea/
-
-# Logs
-*.log
+# OS files
+.DS_Store
+Thumbs.db
